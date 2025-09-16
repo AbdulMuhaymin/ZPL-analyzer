@@ -17,66 +17,145 @@ def eV_to_nm(E_eV):
     wavelength_m = (h * c) / (E_eV * eV_to_J)
     return wavelength_m * 1e9
 
-st.title("Excitation Energy Calculator + Diagram")
+st.title("cDFT/ΔSCF result analyzer")
+st.markdown(r"$Q_g$ : ground state geometry")
+st.markdown(r"$Q_e$ : excited state geometry")
 
-E0 = st.number_input("E0 (Ground min, Ry)", value=0.0, format="%.6f")
-E1 = st.number_input("E1 (Vertical excitation, Ry)", value=0.0, format="%.6f")
-E2 = st.number_input("E2 (Excited min, Ry)", value=0.0, format="%.6f")
-E3 = st.number_input("E3 (Intersection point, Ry)", value=0.0, format="%.6f")
+with st.form("input_form"):
+    col1, col2 = st.columns(2)
+    with col1:
+        E0 = st.text_input("E0 (Ground state at $Q_g$, Ry)", "")
+        E1 = st.text_input("E1 (Excited state at $Q_g$, Ry)", "")
+    with col2:
+        E2 = st.text_input("E2 (Excited state at $Q_e$, Ry)", "")
+        E3 = st.text_input("E3 (Ground state at $Q_e$, Ry)", "")
 
-# Energies
-VEE_eV = ry_to_eV(E1 - E0)
-VEE_nm = eV_to_nm(VEE_eV)
+    title = st.text_input("Plot title (optional)")
 
-AEE_eV = ry_to_eV(E2 - E0)  # corrected formula
-AEE_nm = eV_to_nm(AEE_eV)
+    submitted = st.form_submit_button("Calculate")
 
-st.subheader("Results")
-st.write(f"**Vertical Excitation Energy (VEE):** {VEE_eV:.6f} eV")
-if not np.isnan(VEE_nm):
-    st.write(f"→ {VEE_nm:.2f} nm")
-st.write(f"**Adiabatic Excitation Energy (AEE / ZPL):** {AEE_eV:.6f} eV")
-if not np.isnan(AEE_nm):
-    st.write(f"→ {AEE_nm:.2f} nm")
+if submitted:
+    if E0 and E1 and E2 and E3:  # all fields filled
+        E0, E1, E2, E3 = float(E0), float(E1), float(E2), float(E3)
+        # Energies
+        VEE_eV = ry_to_eV(E1 - E0)
+        VEE_nm = eV_to_nm(VEE_eV)
 
-# --- Diagram ---
-x = np.linspace(-2, 4, 400)
-a = 0.5
+        AEE_eV = ry_to_eV(E2 - E0)  # corrected formula
+        AEE_nm = eV_to_nm(AEE_eV)
 
-# Parabolas
-y0 = a * (x - 0)**2 + E0
-y1 = a * (x - 1.5)**2 + E2
+        st.subheader("Results")
+        st.write(f"**Vertical Excitation Energy (VEE):** {VEE_eV:.3f} eV → {VEE_nm:.2f} nm")
+        st.write(f"**Adiabatic Excitation Energy (AEE / ZPL):** {AEE_eV:.3f} eV → {AEE_nm:.2f} nm")
 
-fig, ax = plt.subplots(figsize=(6,5))
 
-ax.plot(x, y0, 'k-', lw=1.5)  # ground
-ax.plot(x, y1, 'r-', lw=1.5)  # excited
+        # Visible spectrum ranges (in eV)
+        visible_map = [
+            (1.77, 1.91, "red"),
+            (1.91, 2.10, "orange"),
+            (2.10, 2.17, "yellow"),
+            (2.17, 2.33, "green"),
+            (2.33, 2.64, "cyan"),
+            (2.64, 3.10, "blue"),
+        ]
 
-# Points
-ax.scatter([0], [E0], c='k', zorder=5)   # E0
-ax.scatter([0], [E1], c='k', zorder=5)   # E1 (left shoulder)
-ax.scatter([1.5], [E2], c='r', zorder=5) # E2
-ax.scatter([2.5], [E3], c='g', zorder=5) # E3
+        # Telecom bands (in eV)
+        telecom_map = [
+            (0.912, 0.984, "O-band telecom (1260–1360 nm)"),
+            (0.849, 0.912, "E-band telecom (1360–1460 nm)"),
+            (0.810, 0.849, "S-band telecom (1460–1530 nm)"),
+            (0.793, 0.810, "C-band telecom (1530–1565 nm)"),
+            (0.764, 0.793, "L-band telecom (1565–1625 nm)"),
+            (0.740, 0.764, "U-band telecom (1625–1675 nm)"),
+        ]
 
-# Arrow color for VEE
-vee_color = "black"
-if 400 <= AEE_nm <= 700:
-    import matplotlib.cm as cm
-    colormap = cm.get_cmap("nipy_spectral")
-    vee_color = colormap((700 - AEE_nm) / 300)  # map wavelength to color
+        # Merge all ranges
+        band_map = visible_map + telecom_map
 
-# Draw arrows
-ax.annotate("", xy=(0, E1), xytext=(0, E0),
-            arrowprops=dict(arrowstyle="->", color=vee_color, lw=2))
-ax.text(0.1, (E0+E1)/2, "VEE", va="center")
+        # Default comment
+        comment = ""
 
-ax.annotate("", xy=(1.5, E2), xytext=(0, E0),
-            arrowprops=dict(arrowstyle="->", color="blue", lw=2))
-ax.text(0.7, (E0+E2)/2, "ZPL", va="center", color="blue")
+        # Loop through ranges
+        for low, high, label in band_map:
+            if low <= AEE_eV < high:
+                comment = f"ZPL is {label}"
+                break
 
-ax.annotate("", xy=(2.5, E3), xytext=(1.5, E2),
-            arrowprops=dict(arrowstyle="->", color="green", lw=2))
-ax.text(2.0, (E2+E3)/2, "Relax", va="center", color="green")
+        st.write(f"**Comments:** {comment}")
 
-ax.axis("off")
-st.pyplot(fig)
+
+        # --- Diagram ---
+        def plot_configuration_diagram(zpl):
+            # x range
+            x1 = np.linspace(2, 6, 200)
+            x2 = np.linspace(3, 7, 200)
+            k = .5  # parabola "curvature"
+
+            # ground state parabola, min at (0,0)
+            y0 = k * (x1 - 4)**2
+            # excited state parabola, min at (1,1)
+            y1 = k * (x2 - 5)**2 + 4
+
+            fig, ax = plt.subplots(figsize=(6,5))
+
+            # plot parabolas
+            ax.plot(x1, y0, 'k-', lw=2)
+            ax.plot(x2, y1, 'k-', lw=2)
+
+            # Points of interest
+            E0 = (4, 0)   # ground min
+            E1 = (4, 4 + k * (4 - 5)**2)   # vertical excitation
+            E2 = (5, 4)   # excited min
+            E3 = (5, k * (4 - 5)**2)   # intersection (just an example)
+
+            # mark points
+            ax.scatter(*E0, c='k')
+            ax.scatter(*E1, c='k')
+            ax.scatter(*E2, c='k')
+            ax.scatter(*E3, c='k')
+            
+            ax.text(4.1, 3.3, f"{round(eV_to_nm(zpl))} nm")    
+            ax.text(4.1, 3, f"{zpl:.2} eV")
+
+            color_map = [
+                (1.77, 1.91, "red"),
+                (1.91, 2.10, "orange"),
+                (2.10, 2.17, "yellow"),
+                (2.17, 2.33, "green"),
+                (2.33, 2.64, "cyan"),
+                (2.64, 3.10, "blue"),
+            ]
+
+            zpl_color = "black"  # default if outside visible range
+
+            for low, high, color in color_map:
+                if low <= zpl <= high:
+                    zpl_color = color
+                    break
+
+            # vertical excitation arrow (E0 -> E1)
+            ax.annotate("", xy=E1, xytext=E0,
+                        arrowprops=dict(arrowstyle="->", lw=1, color='black'),
+                        ha="left", va="center")
+
+            # ZPL arrow (E0 -> E2)
+            ax.annotate("", xy=E2, xytext=E0,
+                        arrowprops=dict(arrowstyle="<->", lw=2, color=zpl_color),
+                        ha="center", va="center")
+
+            # Relaxation arrow (E2 -> E3)
+            ax.annotate("", xy=E3, xytext=E2,
+                        arrowprops=dict(arrowstyle="->", lw=1, color="black"),
+                        ha="center", va="center")
+
+            # styling
+            ax.set_title(title)
+            ax.set_xlim(2, 7)
+            ax.set_ylim(-1, 7)
+            ax.axis("off")
+
+            st.pyplot(fig)
+
+        plot_configuration_diagram(AEE_eV)
+    else:
+        st.warning("Please fill in all inputs before submitting.")
