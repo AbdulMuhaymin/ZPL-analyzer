@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
+from streamlit_gsheets import GSheetsConnection
 
 # Constants
 h = 6.62607015e-34
@@ -20,6 +21,15 @@ def eV_to_nm(E_eV):
 st.title("cDFT/ΔSCF result analyzer")
 st.markdown(r"$Q_g$ : ground state geometry")
 st.markdown(r"$Q_e$ : excited state geometry")
+
+url = "https://docs.google.com/spreadsheets/d/1ftggc6tT1A_CzN4W3OuZmMQfIy_g9a4biBwlLNkki1c/edit?usp=sharing"
+
+conn = st.connection("gsheets", type=GSheetsConnection)
+
+data = conn.read(spreadsheet=url)
+a=data.to_html().replace("NaN","")
+st.html(a)
+st.dataframe(data)
 
 with st.form("input_form"):
     col1, col2 = st.columns(2)
@@ -51,15 +61,13 @@ if submitted:
 
         # Visible spectrum ranges (in eV)
         visible_map = [
-            (1.65, 1.98, "red"),      # 625–750 nm
-            (1.98, 2.10, "orange"),   # 590–625 nm
-            (2.10, 2.19, "yellow"),   # 565–590 nm
-            (2.19, 2.48, "green"),    # 500–565 nm
-            (2.48, 2.56, "cyan"),     # 485–500 nm
-            (2.56, 2.75, "blue"),     # 450–485 nm
-            (2.75, 3.26, "violet"),   # 380–450 nm
+            (1.77, 1.91, "red"),
+            (1.91, 2.10, "orange"),
+            (2.10, 2.17, "yellow"),
+            (2.17, 2.33, "green"),
+            (2.33, 2.64, "cyan"),
+            (2.64, 3.10, "blue"),
         ]
-
 
         # Telecom bands (in eV)
         telecom_map = [
