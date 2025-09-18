@@ -152,7 +152,7 @@ if submitted:
                         ha="center", va="center")
 
             # styling
-            ax.set_title(title)
+            ax.set_title(title, fontsize=20)
             ax.set_xlim(2, 7)
             ax.set_ylim(-1, 7)
             ax.axis("off")
