@@ -119,7 +119,7 @@ if submitted:
             ax.text(4.1, 3.3, f"{round(eV_to_nm(zpl))} nm")    
             ax.text(4.1, 3, f"{zpl:.2} eV")
 
-            [
+            color_map = [
                         (1.65, 1.98, "red"),      # 625–750 nm
                         (1.98, 2.10, "orange"),   # 590–625 nm
                         (2.10, 2.19, "yellow"),   # 565–590 nm
