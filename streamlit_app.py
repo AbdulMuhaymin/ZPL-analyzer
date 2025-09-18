@@ -119,14 +119,15 @@ if submitted:
             ax.text(4.1, 3.3, f"{round(eV_to_nm(zpl))} nm")    
             ax.text(4.1, 3, f"{zpl:.2} eV")
 
-            color_map = [
-                (1.77, 1.91, "red"),
-                (1.91, 2.10, "orange"),
-                (2.10, 2.17, "yellow"),
-                (2.17, 2.33, "green"),
-                (2.33, 2.64, "cyan"),
-                (2.64, 3.10, "blue"),
-            ]
+            [
+                        (1.65, 1.98, "red"),      # 625–750 nm
+                        (1.98, 2.10, "orange"),   # 590–625 nm
+                        (2.10, 2.19, "yellow"),   # 565–590 nm
+                        (2.19, 2.48, "green"),    # 500–565 nm
+                        (2.48, 2.56, "cyan"),     # 485–500 nm
+                        (2.56, 2.75, "blue"),     # 450–485 nm
+                        (2.75, 3.26, "violet"),   # 380–450 nm
+                    ]
 
             zpl_color = "black"  # default if outside visible range
 
